@@ -28,7 +28,7 @@ trait JdbcMappingCompilerComponent { self: JdbcProfile =>
     def createColumnConverter(n: Node, idx: Int, column: Option[FieldSymbol]): ResultConverter[JdbcResultConverterDomain, _] = {
       val JdbcType(ti, option) = n.nodeType.structural
       if(option) createOptionResultConverter(ti, idx)
-      else createBaseResultConverter(ti, column.fold("<computed>")(_.name), idx)
+      else createBaseResultConverter(ti, column.fold(s"<computed:${idx}>")(_.name), idx)
     }
 
     override def createGetOrElseResultConverter[T](rc: ResultConverter[JdbcResultConverterDomain, Option[T]], default: () => T) = rc match {
