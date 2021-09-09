@@ -92,7 +92,7 @@ def sampleSettings = Seq(
   Compile / unmanagedClasspath ++= (slick / MacroConfig / products).value
 )
 
-ThisBuild / version := "3.4.0-SNAPSHOT"
+ThisBuild / version := "3.4.0-LOCAL"
 
 ThisBuild / crossScalaVersions := Dependencies.scalaVersions
 ThisBuild / scalaVersion := Dependencies.scalaVersions.last
