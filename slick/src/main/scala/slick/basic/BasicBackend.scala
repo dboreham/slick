@@ -20,6 +20,21 @@ import slick.SlickException
 import slick.dbio._
 import slick.util._
 
+import java.io.PrintWriter
+import java.io.StringWriter
+
+object util {
+  def getStackTraceAsString(t: Throwable) = {
+        val sw = new StringWriter
+        t.printStackTrace(new PrintWriter(sw))
+        sw.toString
+    }
+
+    def getCurrentStackTraceAsString() = {
+          getStackTraceAsString(new Throwable)
+    }
+}
+
 /** Backend for the basic database and session handling features.
   * Concrete backends like `JdbcBackend` extend this type and provide concrete
   * types for `Database`, `DatabaseFactory` and `Session`. */
@@ -262,6 +277,8 @@ trait BasicBackend { self =>
     /** Run a `SynchronousDatabaseAction` on this database. */
     protected[this] def runSynchronousDatabaseAction[R](a: SynchronousDatabaseAction[R, NoStream, This, _], ctx: Context, continuation: Boolean): Future[R] = {
       val promise = Promise[R]()
+      actionLogger.error("Asking to run action in the caller thread")
+      actionLogger.error(s"My stack trace is: ${util.getCurrentStackTraceAsString()}")
       ctx.getEC(synchronousExecutionContext).execute(new AsyncExecutor.PrioritizedRunnable {
         def priority = {
           ctx.readSync
@@ -270,6 +287,7 @@ trait BasicBackend { self =>
 
         def run: Unit =
           try {
+            actionLogger.error("Running action in the DB pool thread")
             ctx.readSync
             val res = try {
               acquireSession(ctx)

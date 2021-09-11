@@ -169,7 +169,7 @@ object AsyncExecutor extends Logging {
           if(mbeanServer.isRegistered(mbeanName))
             logger.warn(s"MBean $mbeanName already registered (AsyncExecutor names should be unique)")
           else {
-            logger.debug(s"Registering MBean $mbeanName")
+            logger.debug(s"Registering MeanBean $mbeanName")
             mbeanServer.registerMBean(new AsyncExecutorMXBean {
               def getMaxQueueSize = queueSize
               def getQueueSize = queue.size()
