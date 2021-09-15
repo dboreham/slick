@@ -278,9 +278,8 @@ trait BasicBackend { self =>
     protected[this] def runSynchronousDatabaseAction[R](a: SynchronousDatabaseAction[R, NoStream, This, _], ctx: Context, continuation: Boolean): Future[R] = {
       val promise = Promise[R]()
       actionLogger.error("Asking to run action in the caller thread")
-      actionLogger.error(s"My stack trace is: ${util.getCurrentStackTraceAsString()}")
       // Stash the trace here : this is the parent (not implementing grandparent yet)
-      val ancestorStackTrace = LongStackTraceUtil.getLongStackTrace
+      val ancestorStackTrace = LongStackTraceUtil.getCurrentLongStackTrace()
       ctx.getEC(synchronousExecutionContext).execute(new AsyncExecutor.PrioritizedRunnable {
         def priority = {
           ctx.readSync
@@ -291,7 +290,7 @@ trait BasicBackend { self =>
           try {
             actionLogger.error("Running action in the DB pool thread")
             // Put the trace above in TLS
-            LongStackTraceUtil.saveAncestorStackTrace(ancestorStackTrace)
+            LongStackTraceUtil.setAncestorStackTrace(ancestorStackTrace)
             ctx.readSync
             val res = try {
               acquireSession(ctx)
@@ -308,11 +307,12 @@ trait BasicBackend { self =>
             promise.success(res)
           } catch { case NonFatal(ex) => {
             // Replace the existing short stack trace with a long one built from our ancestors
-            ex.setStackTrace(LongStackTraceUtil.chainStackTraces(ex.getStackTrace()))
+            ex.setStackTrace(LongStackTraceUtil.createChainedStackTrace(ex.getStackTrace()))
             promise.tryFailure(ex) 
           }
-        // Should we clear TLS here?
-      }
+          // Should we clear TLS here?
+          LongStackTraceUtil.clearAncestorStackTrace()
+        }
       })
       promise.future
     }
