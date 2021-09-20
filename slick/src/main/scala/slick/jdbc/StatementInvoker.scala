@@ -19,6 +19,11 @@ abstract class StatementInvoker[+R] extends Invoker[R] { self =>
   protected def setParam(st: PreparedStatement): Unit
   override protected def debuggingId = Some(s"statement $getStatement")
 
+  /** Add a trailing comment to the statement to facilitate tracing into the DB */
+  private def addTracingTags(statement: String, ctx: JdbcBackend#Context): String = {
+    statement + " " + s"/* This is my tracing tag: 123456 */"
+  }
+
   def iteratorTo(maxRows: Int)(implicit session: JdbcBackend#Session): CloseableIterator[R] =
     results(maxRows).fold(r => new CloseableIterator.Single[R](r.asInstanceOf[R]), identity)
 
@@ -28,9 +33,10 @@ abstract class StatementInvoker[+R] extends Invoker[R] { self =>
               defaultConcurrency: ResultSetConcurrency = ResultSetConcurrency.ReadOnly,
               defaultHoldability: ResultSetHoldability = ResultSetHoldability.Default,
               autoClose: Boolean = true)
-             (implicit session: JdbcBackend#Session): Either[Int, PositionedResultIterator[R]] = {
+             (implicit session: JdbcBackend#Session, ctx: JdbcBackend#Context): Either[Int, PositionedResultIterator[R]] = {
     //TODO Support multiple results
-    val statement = getStatement
+    //DBDB Add in comment tag here -- how do we get our tag value though?
+    val statement = addTracingTags(getStatement, ctx)
     val fetchSizeOverride = if (maxRows == 1) Some(1) else None
     val st = session.prepareStatement(statement, defaultType, defaultConcurrency, defaultHoldability, fetchSizeOverride)
     setParam(st)

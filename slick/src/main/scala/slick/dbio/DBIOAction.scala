@@ -385,6 +385,8 @@ trait ActionContext {
 
   /** Unpin this session once. May only be called from a synchronous action context. */
   final def unpin: Unit = stickiness -= 1
+
+  //DBDB perhaps this is the place to store the stack trace for the caller to DBIOAction.run() ?
 }
 
 /** An ActionContext with extra functionality required for streaming DBIOActions. */
