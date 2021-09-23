@@ -178,6 +178,8 @@ trait BasicBackend { self =>
     }
 
     private[this] def runInContextInline[R](a: DBIOAction[R, NoStream, Nothing], ctx: Context, streaming: Boolean, topLevel: Boolean, stackLevel: Int): Future[R] = {
+      // save caller's stack
+      ctx.setCallerStackTrace(Thread.currentThread().getStackTrace())
       logAction(a, ctx)
       a match {
         case SuccessAction(v) => Future.successful(v)
@@ -466,18 +468,24 @@ trait BasicBackend { self =>
     private[BasicBackend] def readSync = sync // workaround for SI-9053 to avoid warnings
 
     private[BasicBackend] var currentSession: Session = null
+    private[BasicBackend] var callerStackTrace : Array[StackTraceElement] = null
 
     private[BasicBackend] def priority(continuation: Boolean): Priority = {
       if (currentSession != null) WithConnection
       else if (continuation) Continuation
       else Fresh
-    }
+  }
 
     /** Used for the sequence counter in Action debug output. This variable is volatile because it
       * is only updated sequentially but not protected by a synchronous action context. */
     @volatile private[BasicBackend] var sequenceCounter = 0
 
     def session: Session = currentSession
+    def getCallerStackTrace = callerStackTrace
+
+    def setCallerStackTrace(trace: Array[StackTraceElement]) = {
+      callerStackTrace = trace
+    }
   }
 
   /** A special DatabaseActionContext for streaming execution. */

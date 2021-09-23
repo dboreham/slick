@@ -94,8 +94,9 @@ case class SQLActionBuilder(queryParts: Seq[Any], unitPConv: SetParameter[Unit])
       else queryParts.iterator.map(String.valueOf).mkString
     new StreamingInvokerAction[Vector[R], R, Effect] {
       def statements = List(query)
-      protected[this] def createInvoker(statements: Iterable[String]) = new StatementInvoker[R] {
+      protected[this] def createInvoker(statements: Iterable[String], ctx: JdbcBackend#Context) = new StatementInvoker[R] {
         val getStatement = statements.head
+        val getContext = ctx
         protected def setParam(st: PreparedStatement) = unitPConv((), new PositionedParameters(st))
         protected def extractValue(rs: PositionedResult): R = rconv(rs)
       }

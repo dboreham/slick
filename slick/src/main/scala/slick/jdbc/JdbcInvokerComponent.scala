@@ -33,6 +33,7 @@ trait JdbcInvokerComponent { self: JdbcProfile =>
 
     protected def getStatement = if(overrideSql ne null) overrideSql else sres.sql
     protected def setParam(st: PreparedStatement): Unit = sres.setter(st, 1, param)
+    protected def getContext = null //DBDB: fixme
     def extractValue(pr: PositionedResult): R = converter.read(pr.rs)
     def updateRowValues(pr: PositionedResult, value: R) = converter.update(value, pr.rs)
   }
